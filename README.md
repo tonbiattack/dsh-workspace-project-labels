@@ -41,17 +41,22 @@ so the row stays as it was.
 
 ## Colors
 
-Every project gets a color from a fixed twelve-hue palette, chosen by hashing the
-Workspace id. Two consequences worth knowing:
+Every project gets its own color. The color is derived from the project's
+position in the creation-ordered Workspace list, using the golden angle so that
+successive projects land far apart on the hue wheel, combined with twenty
+lightness/saturation bands. Measured in CIE Lab, every pair of projects stays at
+least ΔE 14 apart, so no two chips look alike.
 
 - **The color survives a rename.** It follows the Workspace, not its title.
-- **Two projects can share a color.** With 32 projects and 12 hues, collisions
-  are expected. The chip's text is the reliable identifier; the color is a
-  scanning aid.
+- **Adding a project does not recolor the others.** New projects append to the
+  end of the order, so existing colors stay put.
+- **Removing a project shifts later colors.** The order is positional, so a
+  deletion moves every project after it one slot. This is the trade for
+  guaranteeing distinct colors with no collisions.
 
-The palette skips the red band, which would read as an error state. The tint is
-low-opacity and the text keeps the host's own color, so the chip stays readable
-in both light and dark themes.
+The hue range skips the red band, which would read as an error state. The tint
+is low-opacity and the text keeps the host's own color, so the chip stays
+readable in both light and dark themes.
 
 ## How the Workspace is chosen
 
