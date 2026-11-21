@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Project labels in the session list",
+    "description": "Shows each session's project name on its sidebar row, so the flat session list still tells you which project you are working in.",
+    "detail": "docs/DETAIL.md"
+  }
+}

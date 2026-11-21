@@ -1,0 +1,5 @@
+# dsh-workspace-project-labels bundle patch: inserts the plugin row.
+# The Host half is inert; the Client half renders the project chip.
+- insert:
+    - id: workspace-project-labels
+      name: 'dsh-workspace-project-labels'

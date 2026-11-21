@@ -1,0 +1,48 @@
+{
+  "name": "dsh-workspace-project-labels",
+  "version": "1.0.0",
+  "description": "Shows each session's project name, with a stable color per project, on its sidebar row in the DeepSeek Harness Web GUI.",
+  "type": "module",
+  "license": "MIT",
+  "author": "tonbiattack",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "workspace",
+    "sidebar",
+    "session-list"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonbiattack/dsh-workspace-project-labels.git"
+  },
+  "homepage": "https://github.com/tonbiattack/dsh-workspace-project-labels#readme",
+  "bugs": {
+    "url": "https://github.com/tonbiattack/dsh-workspace-project-labels/issues"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-workspace"]
+    }
+  }
+}
