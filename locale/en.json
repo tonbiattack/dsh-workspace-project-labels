@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Project labels in the session list",
-    "description": "Shows each session's project name on its sidebar row, so the flat session list still tells you which project you are working in.",
+    "description": "Shows each session's project name with a stable color, filters the list by project, and shows open GitHub issue and pull-request counts.",
     "detail": "docs/DETAIL.md"
   }
 }
