@@ -1,17 +1,17 @@
 # dsh-workspace-project-labels
 
 Shows each session's **project name** on its sidebar row in the DeepSeek Harness
-Web GUI, with a stable color per project, a project filter, and GitHub issue and
-pull-request counts.
+Web GUI, with a stable color per project.
 
 The sidebar's **In one list** view flattens every session into one list. Without
 a Workspace heading above them, rows tell you the session title but not which
-project the work belongs to. This plugin puts that back.
+project the work belongs to. This plugin puts that back: a small colored chip on
+each row.
 
 ```
-[archive-extract-cleaner] I2 P0   14:32
-[device-warden]           I0 P1   12:05
-[default-workspace]               09:41
+● archive-extract-cleaner   14:32
+● device-warden             12:05
+● default-workspace         09:41
 ```
 
 ## Install
@@ -26,7 +26,8 @@ Or install a local checkout:
 dsh plugin --profile web add ./path/to/dsh-workspace-project-labels
 ```
 
-Restart the Web UI after installing.
+Restart the Web UI after installing. The chip appears on every session row that
+has a working directory matching a registered Workspace.
 
 ## What it shows
 
@@ -38,64 +39,17 @@ carries the complete name.
 Sessions whose working directory matches no registered Workspace show no chip,
 so the row stays as it was.
 
-## Filtering by project
-
-A search field sits above the session list. Typing matches the Workspace title
-and its folder name, case-insensitively, and dims every session that belongs to
-another project.
-
-Clicking a project chip filters to that project; clicking it again clears the
-filter. **Esc** or the **×** button clears everything.
-
-The filter **dims** rows rather than removing them. The host owns the row list
-and exposes no filter hook, so removing rows would mean fighting its rendering.
-Dimming keeps the list stable: selection, scrolling, and paging keep working,
-and clearing the filter restores the list instantly.
-
-## GitHub counts
-
-When a project's git remote points at GitHub, the chip is followed by two
-compact links:
-
-- **I** — open issues, linking to `/issues`
-- **P** — open pull requests, linking to `/pulls`
-
-Counts come from the plugin's own Host endpoint, which reads the git remote of
-each Workspace and asks the GitHub API. **The token never reaches the browser**:
-the Client asks for counts, never for credentials.
-
-- **Caching** — one request per repository per five minutes, shared by every
-  session row of that project.
-- **Truncation** — a count of 100 or more is shown with a `+`, because the API
-  page size caps the exact number.
-- **Failures** — a project with no GitHub remote shows nothing. A rate limit,
-  authentication failure, timeout, or offline state shows a dimmed dot whose
-  tooltip names the reason; clicking it retries.
-- **Disabling** — set `enabled: false` on the plugin row to turn the GitHub
-  integration off. The labels and the filter keep working.
-
-### Token
-
-The Host resolves a token in this order:
-
-1. `GITHUB_TOKEN` or `GH_TOKEN` in the environment
-2. the DSH credentials store (`GITHUB_TOKEN`)
-3. the `gh` CLI (`gh auth token`)
-
-Without a token, public repositories still work at GitHub's anonymous rate
-limit. Private repositories need a token with `repo` read access.
-
 ## Colors
 
-Every project gets its own color, derived from its position in the
-creation-ordered Workspace list. The golden angle spreads successive projects
-far apart on the hue wheel, and twenty lightness/saturation bands add a second
-axis. Measured in CIE Lab, every pair of projects stays at least ΔE 14 apart, so
-no two chips look alike.
+Every project gets its own color. The color is derived from the project's
+position in the creation-ordered Workspace list, using the golden angle so that
+successive projects land far apart on the hue wheel, combined with twenty
+lightness/saturation bands. Measured in CIE Lab, every pair of projects stays at
+least ΔE 14 apart, so no two chips look alike.
 
 - **The color survives a rename.** It follows the Workspace, not its title.
 - **Adding a project does not recolor the others.** New projects append to the
-  end of the order.
+  end of the order, so existing colors stay put.
 - **Removing a project shifts later colors.** The order is positional, so a
   deletion moves every project after it one slot. This is the trade for
   guaranteeing distinct colors with no collisions.
@@ -114,9 +68,9 @@ Paths are compared case-insensitively, matching how Windows treats them.
 
 ## Remote access
 
-Everything is served from the same origin as the rest of the Web UI, so the
-plugin renders identically when you reach the GUI through a tunnel, a reverse
-proxy, or a VPN such as Tailscale. Nothing is bound to `localhost`.
+The plugin is a client-side module served from the same origin as the rest of
+the Web UI, so it renders identically when you reach the GUI through a tunnel,
+a reverse proxy, or a VPN such as Tailscale. Nothing is bound to `localhost`.
 
 ## Limitations
 
@@ -124,13 +78,9 @@ proxy, or a VPN such as Tailscale. Nothing is bound to `localhost`.
   directory was never recorded shows no chip.
 - The label is the Workspace title. Renaming a Workspace updates every chip that
   points at it.
-- The filter dims rows; it does not remove them. A true filtered list needs a
-  filter hook from the host, which DSH does not currently expose.
-- GitHub counts cover the first 100 open items per repository. Beyond that the
-  number is a lower bound shown with `+`.
-- The filter bar is inserted into the sidebar's list area, which the host marks
-  with `data-sidebar-list-area`. A DSH release that renames that attribute would
-  hide the bar until the plugin is updated.
+- The chip is display-only; it does not switch Workspace or open a menu.
+- The chip renders in every grouping mode. In the grouped views the Workspace
+  heading already names the project, so the chip is redundant there.
 
 ## Uninstall
 
