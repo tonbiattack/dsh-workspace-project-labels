@@ -8,11 +8,11 @@ a Workspace heading above them, rows tell you the session title but not which
 project the work belongs to. This plugin puts that back: a small colored chip on
 each row.
 
-```
-● archive-extract-cleaner   14:32
-● device-warden             12:05
-● default-workspace         09:41
-```
+![The sidebar with a colored project chip on every session row](docs/images/sidebar.png)
+
+Each chip carries the project's name and its own color, so a glance down the
+list tells you which project each session belongs to. Hovering a chip shows the
+full directory path.
 
 ## Install
 

@@ -5,6 +5,12 @@ a Workspace heading above them, a row tells you the session title but not which
 project it belongs to. This plugin adds that missing piece: a small colored chip
 on each row carrying the project's name.
 
+![The sidebar with a colored project chip on every session row](images/sidebar.png)
+
+Each chip carries the project's name and its own color, so a glance down the
+list tells you which project each session belongs to. Hovering a chip shows the
+full directory path.
+
 ## What it shows
 
 Each session row gets a chip with the title of the Workspace that owns the
