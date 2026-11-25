@@ -17,8 +17,12 @@ window.__ModuleLoader__.load({
 .wpl-chip {
   display: inline-flex;
   align-items: center;
-  max-width: 8em;
+  /* The chip takes the space the row leaves after its title and time label,
+     and shrinks before it clips. A fixed max-width cut long project names
+     (the longest here is 29 characters) down to an unreadable stub. */
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   padding: 0 5px 0 4px;
   border-radius: 4px;
   border-left: 2px solid var(--wpl-edge, transparent);
@@ -29,7 +33,14 @@ window.__ModuleLoader__.load({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: none;
+}
+/* The trailing seat is a flex row; letting the chip grow into the free space
+   is what keeps a long name readable instead of clipped at a fixed width. */
+.wpl-chip-wrap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 `
 
@@ -132,12 +143,14 @@ window.__ModuleLoader__.load({
       if (workspace === undefined || color === undefined) return null
       const label = workspace.title || basename(workspace.path)
       if (label === '') return null
-      return h('span', {
-        className: 'wpl-chip',
-        title: workspace.path,
-        'aria-label': label,
-        style: { '--wpl-edge': color.edge, '--wpl-tint': color.tint },
-      }, label)
+      return h('span', { className: 'wpl-chip-wrap' },
+        h('span', {
+          className: 'wpl-chip',
+          title: `${label}\n${workspace.path}`,
+          'aria-label': label,
+          style: { '--wpl-edge': color.edge, '--wpl-tint': color.tint },
+        }, label),
+      )
     }
 
     return {

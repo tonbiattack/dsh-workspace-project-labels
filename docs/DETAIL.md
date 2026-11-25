@@ -15,7 +15,10 @@ full directory path.
 
 Each session row gets a chip with the title of the Workspace that owns the
 session's working directory. Hovering the chip shows the full directory path.
-The chip is clipped to keep the row's time label readable; the tooltip always
+
+The chip takes whatever width the row leaves after its title and time label, so
+a long project name stays readable instead of being cut at a fixed width. Only
+when the sidebar itself is too narrow does the name clip, and the tooltip always
 carries the complete name.
 
 Sessions whose working directory matches no registered Workspace show no chip,
