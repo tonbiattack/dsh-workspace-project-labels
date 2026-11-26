@@ -42,6 +42,77 @@ window.__ModuleLoader__.load({
   min-width: 0;
   flex: 0 1 auto;
 }
+
+/* The Workspace filter sits between the section header and the session list.
+   The host region is a flex column and the list is its flexing scroller, so a
+   non-flexing sibling here shifts the list down without changing its sizing. */
+.wpl-bar-host {
+  flex: none;
+  padding: 2px 8px 6px;
+  box-sizing: border-box;
+}
+.wpl-bar-host[hidden] { display: none; }
+.wpl-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.wpl-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l3);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  line-height: 18px;
+  font-family: inherit;
+}
+.wpl-input::placeholder { color: var(--dsw-alias-label-tertiary); }
+.wpl-input:focus {
+  outline: none;
+  border-color: var(--dsw-alias-border-selected);
+}
+.wpl-clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+}
+.wpl-clear:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+.wpl-status {
+  padding-top: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+/* A filtered-out row keeps its place and height so the list does not reflow;
+   only its contents fade. */
+.wpl-hidden {
+  opacity: 0.28;
+  transition: opacity 120ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wpl-hidden { transition: none; }
+}
 `
 
     /** Last path segment of a Windows or POSIX path. */
@@ -153,6 +224,212 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /**
+     * Shared Workspace-filter state. The field writes it; the dimming pass
+     * reads it. Kept outside React so the DOM pass can read it directly.
+     */
+    const workspaceFilter = {
+      query: '',
+      listeners: new Set(),
+      get() { return this.query },
+      set(query) {
+        const next = typeof query === 'string' ? query : ''
+        if (next === this.query) return
+        this.query = next
+        for (const listener of [...this.listeners]) listener()
+      },
+      subscribe(listener) {
+        this.listeners.add(listener)
+        return () => { this.listeners.delete(listener) }
+      },
+    }
+
+    /** Subscribe a component to the Workspace filter. */
+    function useWorkspaceFilter() {
+      const [query, setQuery] = React.useState(() => workspaceFilter.get())
+      React.useEffect(() => {
+        const sync = () => setQuery(workspaceFilter.get())
+        sync()
+        return workspaceFilter.subscribe(sync)
+      }, [])
+      return query
+    }
+
+    /**
+     * Does one Workspace match the query? Only the registered title is searched,
+     * falling back to the folder name when a Workspace has no title. Session
+     * titles and conversation content are deliberately not consulted.
+     * @param workspace - candidate Workspace row.
+     * @param query - lowercased, trimmed user text; empty matches everything.
+     */
+    function matchesWorkspace(workspace, query) {
+      if (query === '') return true
+      const title = (workspace.title || basename(workspace.path ?? '')).toLowerCase()
+      return title.includes(query)
+    }
+
+    /**
+     * Apply the Workspace filter to the rendered sidebar.
+     *
+     * The host owns the row list and exposes no filter hook, so matching rows
+     * cannot be removed. Non-matching Workspace headers and their sessions are
+     * dimmed instead: the list keeps its layout, and clearing restores it.
+     * Workspace membership comes from the registry (`workspace.sessionIds`),
+     * not from re-deriving a Workspace per session.
+     *
+     * @param items - registered Workspace rows.
+     */
+    function applyWorkspaceFilter(items) {
+      const raw = workspaceFilter.get().trim().toLowerCase()
+      const filtering = raw !== ''
+      const matchingIds = new Set()
+      const matchingSessions = new Set()
+      if (filtering) {
+        for (const workspace of items) {
+          if (!matchesWorkspace(workspace, raw)) continue
+          matchingIds.add(workspace.workspaceId)
+          for (const sessionId of workspace.sessionIds ?? []) matchingSessions.add(sessionId)
+        }
+      }
+      for (const row of document.querySelectorAll('[data-row-key^="workspace:"]')) {
+        if (!filtering) { row.classList.remove('wpl-hidden'); continue }
+        const key = (row.getAttribute('data-row-key') ?? '').slice('workspace:'.length)
+        // The ungrouped bucket has an empty key and is not a registered
+        // Workspace, so it hides whenever a Workspace filter is active.
+        row.classList.toggle('wpl-hidden', !matchingIds.has(key))
+      }
+      for (const row of document.querySelectorAll('[data-row-key^="session:"]')) {
+        if (!filtering) { row.classList.remove('wpl-hidden'); continue }
+        const id = (row.getAttribute('data-row-key') ?? '').slice('session:'.length)
+        row.classList.toggle('wpl-hidden', !matchingSessions.has(id))
+      }
+    }
+
+    /**
+     * The sidebar's Workspace search field.
+     *
+     * It is mounted once from the sidebar foot and portals its markup into a
+     * container inserted immediately before the session list, so it sits under
+     * the section header and above the rows without joining the scroller or
+     * the host's flex sizing.
+     *
+     * @param props - slot props; `useWorkspaces` is the global Workspace hook.
+     */
+    function WorkspaceFilterHost(props) {
+      const query = useWorkspaceFilter()
+      const items = props.useWorkspaces === undefined
+        ? []
+        : props.useWorkspaces(snapshot => snapshot.items)
+      const [mount, setMount] = React.useState(null)
+
+      // Attach one container above the list, and keep it attached across the
+      // host's own re-renders.
+      React.useEffect(() => {
+        let container
+        let observer
+        const attach = () => {
+          const area = document.querySelector('[data-sidebar-list-area]')
+          if (area === null || area.parentElement === null) return false
+          // Hidden while the sidebar is collapsed to its rail: the list has no
+          // usable width, so a field there would only crowd the icons.
+          if (area.clientWidth < 120) {
+            if (container !== undefined) container.hidden = true
+            return true
+          }
+          if (container === undefined) {
+            container = document.createElement('div')
+            container.className = 'wpl-bar-host'
+            container.dataset.plugin = 'dsh-workspace-project-labels'
+          }
+          container.hidden = false
+          if (container.parentElement !== area.parentElement || container.nextElementSibling !== area) {
+            area.parentElement.insertBefore(container, area)
+          }
+          setMount(container)
+          return true
+        }
+        if (!attach()) {
+          observer = new MutationObserver(() => {
+            if (attach() && observer !== undefined) { observer.disconnect(); observer = undefined }
+          })
+          observer.observe(document.body, { childList: true, subtree: true })
+        }
+        const onResize = () => { attach() }
+        window.addEventListener('resize', onResize)
+        return () => {
+          window.removeEventListener('resize', onResize)
+          observer?.disconnect()
+          container?.remove()
+        }
+      }, [])
+
+      // Re-run the dimming pass whenever the filter, the Workspace list, or the
+      // rendered rows change. Rows appear and disappear as the host pages and
+      // expands groups, so observe the list rather than guessing when.
+      React.useEffect(() => {
+        applyWorkspaceFilter(items)
+        const area = document.querySelector('[data-sidebar-list-area]')
+        if (area === null) return undefined
+        const observer = new MutationObserver(() => { applyWorkspaceFilter(items) })
+        observer.observe(area, { childList: true, subtree: true })
+        return () => {
+          observer.disconnect()
+          for (const row of document.querySelectorAll('.wpl-hidden')) row.classList.remove('wpl-hidden')
+        }
+      }, [items, query])
+
+      if (mount === null) return null
+      const { createPortal } = require('react-dom')
+      const trimmed = query.trim().toLowerCase()
+      const matches = trimmed === '' ? -1 : items.filter(workspace => matchesWorkspace(workspace, trimmed)).length
+      return createPortal(h(WorkspaceFilterBar, { matches }), mount)
+    }
+
+    /**
+     * The field itself: a text input, a match count while filtering, and a
+     * clear button. Escape clears it.
+     * @param props - `matches` is the number of matching Workspaces, or -1 when
+     *   no filter is active.
+     */
+    function WorkspaceFilterBar(props) {
+      const query = useWorkspaceFilter()
+      const [draft, setDraft] = React.useState(query)
+      React.useEffect(() => { setDraft(query) }, [query])
+      const active = query.trim() !== ''
+      const noMatch = props.matches === 0
+      return h(React.Fragment, null,
+        h('div', { className: 'wpl-bar' },
+          h('input', {
+            className: 'wpl-input',
+            type: 'text',
+            value: draft,
+            placeholder: 'ワークスペース名で絞り込み',
+            'aria-label': 'ワークスペース名で絞り込み',
+            onChange: (event) => {
+              setDraft(event.target.value)
+              workspaceFilter.set(event.target.value)
+            },
+            onKeyDown: (event) => {
+              if (event.key !== 'Escape') return
+              event.stopPropagation()
+              setDraft('')
+              workspaceFilter.set('')
+            },
+          }),
+          active && h('button', {
+            type: 'button',
+            className: 'wpl-clear',
+            title: '絞り込みを解除',
+            'aria-label': '絞り込みを解除',
+            onClick: () => { setDraft(''); workspaceFilter.set('') },
+          }, '×'),
+        ),
+        active && h('div', { className: 'wpl-status' },
+          noMatch ? '一致するワークスペースはありません'
+            : `${props.matches} 件のワークスペース`),
+      )
+    }
+
     return {
       inject: ['slots'],
       apply(ctx) {
@@ -169,6 +446,16 @@ window.__ModuleLoader__.load({
           id: 'workspace-project-labels',
           order: 50,
         }, ProjectLabel))
+
+        // The search field lives in the sidebar foot, which renders exactly one
+        // occupant per registration. Registering it on a row-scoped list would
+        // render one field per session row, which is what broke the layout in
+        // an earlier attempt: the field itself is portalled above the list.
+        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+          name: 'sidebar.footer.action',
+          id: 'workspace-project-labels-filter',
+          order: 900,
+        }, WorkspaceFilterHost))
       },
     }
   },

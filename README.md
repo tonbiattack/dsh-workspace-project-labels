@@ -1,7 +1,8 @@
 # dsh-workspace-project-labels
 
 Shows each session's **project name** on its sidebar row in the DeepSeek Harness
-Web GUI, with a stable color per project.
+Web GUI, with a stable color per project and a field that searches Workspaces by
+name.
 
 The sidebar's **In one list** view flattens every session into one list. Without
 a Workspace heading above them, rows tell you the session title but not which
@@ -69,6 +70,24 @@ Workspace therefore shows the nested project, not its ancestor.
 
 Paths are compared case-insensitively, matching how Windows treats them.
 
+## Searching by Workspace name
+
+A field above the session list filters by **Workspace name**. It matches the
+registered title case-insensitively and ignores session titles and conversation
+content entirely, so typing `github` finds the `github-bulk-cloner` and
+`github-repo-sorter` Workspaces rather than every session that mentions GitHub.
+
+While a query is active the field reports how many Workspaces match, and the
+Workspaces that do not match are dimmed along with their sessions. Workspaces
+with no sessions still count as matches: the filter works on the registry, not
+on the session list. **Esc** or **×** clears it.
+
+The list keeps its layout while filtering. The host owns the row list and
+exposes no filter hook, so non-matching rows are dimmed rather than removed;
+that way selection, scrolling, and paging keep working and clearing the query
+restores the list instantly. Matching is read from the Workspace registry's own
+membership, so nothing is re-fetched and no history is loaded.
+
 ## Remote access
 
 The plugin is a client-side module served from the same origin as the rest of
@@ -84,6 +103,13 @@ a reverse proxy, or a VPN such as Tailscale. Nothing is bound to `localhost`.
 - The chip is display-only; it does not switch Workspace or open a menu.
 - The chip renders in every grouping mode. In the grouped views the Workspace
   heading already names the project, so the chip is redundant there.
+- The search field dims rows; it does not remove them. A true filtered list
+  needs a filter hook from the host, which DSH does not expose.
+- Sessions that belong to no Workspace are dimmed whenever a query is active,
+  because they have no Workspace name to match.
+- The field is inserted into the sidebar's browsing region, which the host marks
+  with `data-sidebar-list-area`. A DSH release that renames that attribute would
+  hide the field until the plugin is updated.
 
 ## Uninstall
 
