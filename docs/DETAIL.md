@@ -67,6 +67,11 @@ Workspaces that do not match are dimmed along with their sessions. Workspaces
 with no sessions still count as matches, because the filter reads the registry
 rather than the session list. **Esc** or **×** clears it.
 
+![Typing dsh in the Workspace search field: two matching sessions stay bright and the status line reads 4 Workspaces, while every other row and chip is dimmed](images/sidebar-workspace-search.png)
+
+Typing `dsh`: the two sessions that belong to matching Workspaces stay bright,
+the field reports `4件のワークスペース`, and the rest of the list is dimmed.
+
 The list keeps its layout while filtering. The host owns the row list and
 exposes no filter hook, so non-matching rows are dimmed rather than removed;
 selection, scrolling, and paging keep working, and clearing the query restores
