@@ -17,8 +17,19 @@ full directory path.
 
 ## Install
 
+The plugin is a community bundle in the
+[DeepSeek Harness plugin registry](https://dsh.pub/en/plugins/). The registry CLI
+resolves the repository to an exact public commit and installs that:
+
 ```sh
-dsh plugin --profile web add dsh-workspace-project-labels
+npx dshpub add tonbiattack/dsh-workspace-project-labels --profile web
+```
+
+Installing straight from GitHub works without the registry CLI; pin a tag or a
+full commit so the install is reproducible:
+
+```sh
+dsh plugin --profile web add github:tonbiattack/dsh-workspace-project-labels#v1.2.1
 ```
 
 Or install a local checkout:
@@ -29,6 +40,16 @@ dsh plugin --profile web add ./path/to/dsh-workspace-project-labels
 
 Restart the Web UI after installing. The chip appears on every session row that
 has a working directory matching a registered Workspace.
+
+## Compatibility
+
+- Built and verified against DeepSeek Harness **0.2.2-rc.5**. The plugin reads
+  the Web client manifest (`dsh.client`) and the sidebar's existing markup; a
+  DSH release that changes either may need a plugin update.
+- Web UI only. The Host half is inert, so a headless profile loads nothing.
+- No configuration. There are no settings, config keys, or credentials.
+- To turn it off, remove it with the command in [Uninstall](#uninstall) and
+  restart the Web UI; the chips and the search field disappear.
 
 ## What it shows
 
