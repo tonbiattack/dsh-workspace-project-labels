@@ -1,6 +1,6 @@
 {
   "name": "dsh-workspace-project-labels",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Shows each session's project name, with a stable color per project, on its sidebar row in the DeepSeek Harness Web GUI.",
   "type": "module",
   "license": "MIT",
