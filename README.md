@@ -17,20 +17,20 @@ full directory path.
 
 ## Install
 
-The plugin is a community bundle in the
-[DeepSeek Harness plugin registry](https://dsh.pub/en/plugins/). The registry CLI
-resolves the repository to an exact public commit and installs that:
+Install straight from GitHub. Pin a tag or a full commit so the install is
+reproducible:
 
 ```sh
-npx dshpub add tonbiattack/dsh-workspace-project-labels --profile web
+dsh plugin --profile web add github:tonbiattack/dsh-workspace-project-labels#v1.2.2
 ```
 
-Installing straight from GitHub works without the registry CLI; pin a tag or a
-full commit so the install is reproducible:
-
-```sh
-dsh plugin --profile web add github:tonbiattack/dsh-workspace-project-labels#v1.2.1
-```
+The plugin is also a community bundle in the
+[DeepSeek Harness plugin registry](https://dsh.pub/en/plugins/). The registry
+page shows the equivalent `npx dshpub add tonbiattack/dsh-workspace-project-labels --profile web`,
+which resolves the repository to an exact public commit and then runs the same
+`dsh plugin add`. On Windows that CLI could not launch `dsh` when it came from an
+npm shim (`spawn dsh ENOENT`), so the command above is the one verified for this
+release.
 
 Or install a local checkout:
 
